@@ -1,0 +1,3 @@
+cd C:\Users\PICHAU\Documents\ws-projetoIntegradorII\streamLit
+pipenv shell
+streamlit run streamLitApp.py

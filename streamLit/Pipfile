@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 streamlit = "*"
+pandas = "*"
+mysql-connector-python = "*"
+numpy = "*"
 
 [dev-packages]
 

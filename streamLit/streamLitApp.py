@@ -1,4 +1,7 @@
 import streamlit as st
+import pandas as pd
+
+
 st.header('Compressor UTFPR - Informações Elétricas')
 
 if st.button('Corrente'):

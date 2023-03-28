@@ -1,23 +1,24 @@
 import streamlit as st
 import pandas as pd
-import mysql.connector
+import pymysql.cursors
+import numpy as np
 
-def app():
-    conn = mysql.connector.connect( host="127.0.0.1",
-                                    port="3306",
-                                    user="root",
-                                    passwd="root",
-                                    db="node_test"
-                                  )
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM node_test.node")
-    data = cursor.fetchall()
-    df = pd.DataFrame(data, columns=['id',
-                                     'value',
-                                     'created_at']
-                      )
-   
-    st.dataframe(df)
+connection = pymysql.connect(host='127.0.0.1',
+                         user='root',
+                         password='root',
+                         database='node_test',
+                         cursorclass=pymysql.cursors.DictCursor)
+cursor = connection.cursor()
+cursor.execute("SELECT value,created_at FROM node_test.node LIMIT 5")
+data = cursor.fetchall()
+df = pd.DataFrame(data, columns=['value',
+                                 'created_at']
+
+                  )
+datas = df[['value', 'created_at']] # Also include the "date" column
+st.line_chart(datas)
+st.dataframe(df)
+st.line_chart(df[['value','created_at']], x = 'created_at',y='value')
 
 
-    st.text('Lucas Moletta')
+st.text('Lucas Moletta')

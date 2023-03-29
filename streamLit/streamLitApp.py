@@ -2,6 +2,7 @@ import streamlit as st
 import mysql.connector
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 mydb = mysql.connector.connect(
   host="localhost",
@@ -23,6 +24,13 @@ for result in dadosDB:
 st.header('Compressor UTFPR - Informações Elétricas')
 d = st.date_input("Escolha o dia das medições: ") #Pegamos o dia que o usuário quer ver as medições
 #Fazer um dataframe com o panda separando pelo dia
+
+#teste com slide de datetime
+start_time = st.slider(
+    "When do you start?",
+    value=datetime(2020, 1, 1, 9, 30),
+    format="MM/DD/YY - hh:mm")
+st.write("Start time:", start_time)
 
 df = pd.DataFrame(dadosDB, columns=['value','created_at'])
 st.line_chart(df[['value','created_at']], x = 'created_at',y='value')

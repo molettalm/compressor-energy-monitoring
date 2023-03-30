@@ -1,0 +1,172 @@
+[
+    {
+        "id": "27ecd7e7d87a6e90",
+        "type": "tab",
+        "label": "TRAB_DONE_ABC",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "5db4b9e91c3eef9e",
+        "type": "inject",
+        "z": "27ecd7e7d87a6e90",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 310,
+        "y": 420,
+        "wires": [
+            [
+                "b54e795c835bea49"
+            ]
+        ]
+    },
+    {
+        "id": "b54e795c835bea49",
+        "type": "function",
+        "z": "27ecd7e7d87a6e90",
+        "name": "",
+        "func": "var random = Math.random();\nvar tzoffset = -3 * 60 * 60 * 1000; \nvar date = new Date(Date.now() + tzoffset);\nvar timestamp = date.toISOString().replace(/T/, ' ').replace(/\\..+/, '');\nvar csvString = random + \",'\" + timestamp + \"'\";\nreturn { payload: csvString };",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 420,
+        "wires": [
+            [
+                "4285b3ba0da29b27",
+                "e7d15723f2df4281"
+            ]
+        ]
+    },
+    {
+        "id": "4285b3ba0da29b27",
+        "type": "file",
+        "z": "27ecd7e7d87a6e90",
+        "name": "",
+        "filename": "/home/pi2-root/Desktop/test.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 750,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e7d15723f2df4281",
+        "type": "function",
+        "z": "27ecd7e7d87a6e90",
+        "name": "Buffer Data",
+        "func": "if (!flow.buffer) {\n    flow.buffer = [];\n}\n\nflow.buffer.push(msg.payload);\n\nif (flow.buffer.length >= 10) {\n    var buffer = flow.buffer;\n    flow.buffer = null;\n    return {payload: buffer};\n}\n\nreturn null;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 710,
+        "y": 280,
+        "wires": [
+            [
+                "6a50d9634663f194",
+                "71b39695f47a7895"
+            ]
+        ]
+    },
+    {
+        "id": "6a50d9634663f194",
+        "type": "debug",
+        "z": "27ecd7e7d87a6e90",
+        "name": "debug 2",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "71b39695f47a7895",
+        "type": "function",
+        "z": "27ecd7e7d87a6e90",
+        "name": "function 2",
+        "func": "var query = `INSERT INTO node (value,created_at)\n             VALUES`;\nvar variables =`(`;\nfor (let i = 0; i < msg.payload.length; i++) {\n\n    variables += msg.payload[i].split(',')[0] + ',' + msg.payload[i].split(',')[1]+')';\n    if (i < msg.payload.length - 1) {\n        variables +=',('\n    }\n}\nmsg.topic = query + variables\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 280,
+        "wires": [
+            [
+                "4a7326ab035e70d5",
+                "8db4a2ef87e01b21"
+            ]
+        ]
+    },
+    {
+        "id": "4a7326ab035e70d5",
+        "type": "debug",
+        "z": "27ecd7e7d87a6e90",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1160,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "8db4a2ef87e01b21",
+        "type": "mysql",
+        "z": "27ecd7e7d87a6e90",
+        "mydb": "0bed2f7d0d224262",
+        "name": "",
+        "x": 1120,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0bed2f7d0d224262",
+        "type": "MySQLdatabase",
+        "name": "",
+        "host": "127.0.1.1",
+        "port": "3306",
+        "db": "node_test",
+        "tz": "",
+        "charset": "UTF8"
+    }
+]

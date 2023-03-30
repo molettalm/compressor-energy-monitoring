@@ -8,6 +8,7 @@ streamlit = "*"
 pandas = "*"
 mysql-connector-python = "*"
 numpy = "*"
+pymysql = "*"
 
 [dev-packages]
 

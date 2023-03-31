@@ -6,19 +6,19 @@ from datetime import datetime
 from datetime import time
 
 
-conn = pymysql.connect(host='127.0.0.1',
-                       user='dev',
-                       password='dev',
-                       database='node_test')
+conn = pymysql.connect(host='192.168.18.27',
+                       user='piuser',
+                       password='piuser',
+                       database='pi2')
 
-tableName = 'node'
+tableName = 'compressor_measurements'
 
 if 'min' not in st.session_state:
     cursor = conn.cursor()
-    cursor.execute("SELECT Min(created_at) FROM "+ tableName)
+    cursor.execute("SELECT Min(moment) FROM "+ tableName)
     st.session_state.min = cursor.fetchall()
 
-    cursor.execute("SELECT Max(created_at) FROM "+ tableName)
+    cursor.execute("SELECT Max(moment) FROM "+ tableName)
     st.session_state.max= cursor.fetchall()
 
 page1 = "Main Page"
@@ -31,12 +31,12 @@ st.write(
 @st.cache_data
 def load_data(date_select):
     cursor = conn.cursor()
-    cursor.execute("SELECT value,created_at FROM node_test.node")
+    cursor.execute("SELECT moment, voltage, current, power_W, energy_WH, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc FROM pi2." + tableName)
     data = cursor.fetchall()
-    df = pd.DataFrame(data, columns=['value', 'created_at'])
-    df['created_at'] = pd.to_datetime(df['created_at'])
-    df = df[(df['created_at']>=date_select[0]) & (df['created_at']<date_select[1])]
-    df = df.set_index('created_at') 
+    df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc'])
+    df['moment'] = pd.to_datetime(df['moment'])
+    df = df[(df['moment']>=date_select[0]) & (df['moment']<date_select[1])]
+    df = df.set_index('moment') 
     df.index = df.index.strftime('%d/%m/%y %H:%M:%S') 
     return df
 
@@ -53,13 +53,22 @@ df = load_data(date_select)
 
 with st.container():
     st.write("Tensão")
-    st.line_chart(df, use_container_width=True) #Tensão
+    st.line_chart(df.rename(columns = {'voltage': 'Tensão (V)'})['Tensão (V)'], use_container_width=True) #Tensão
 with st.container():
     st.write("Corrente")
-    st.line_chart(df, use_container_width=True) #Corrente 
+    st.line_chart(df.rename(columns = {'current': 'Corrente (A)'})['Corrente (A)'], use_container_width=True) #Corrente 
 with st.container():
     st.write("Potência")
-    st.line_chart(df, use_container_width=True) #Potencia
+    st.line_chart(df.rename(columns = {'power_W': 'Potência (W)'})['Potência (W)'], use_container_width=True) #Potencia
+with st.container():
+    st.write("Energia")
+    st.line_chart(df.rename(columns = {'energy_WH': 'Energia (W/h)'})['Energia (W/h)'], use_container_width=True) #Energia
+with st.container():
+    st.write("Fator de Potência")
+    st.line_chart(df.rename(columns = {'power_factor_measured': 'Fat de Pot Medido', 'power_factor_calc': 'Fat de Pot Calc'})[['Fat de Pot Medido', 'Fat de Pot Calc']], use_container_width=True) #Fator de Potência
+with st.container():
+    st.write("Ângulo de Fase")
+    st.line_chart(df.rename(columns = {'phase_angle_measured': 'Âng de Fase Medido (Graus)', 'phase_angle_calc': 'Âng de Fase Calc (Graus)'})[['Âng de Fase Medido (Graus)', 'Âng de Fase Calc (Graus)']], use_container_width=True) #Ângulo de Fase
 with st.container():
     st.write("Modos de operação")
     chart_data = pd.DataFrame(np.random.randn(20,3), columns=["a", "b", "c"]) #Chart com a qtd de vezes do modo de operação

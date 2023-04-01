@@ -60,13 +60,23 @@ def classifyOpMode(valor):
     else:
         return 'StandBy'
 
-currentAvgOld = df['current'].iloc[:-4000].mean()
-powerFacAvgOld = df['power_factor_calc'].iloc[:-4000].mean()
-opModeOld = df['current'].iloc[:-4000].apply(classifyOpMode)
+numGetOld = round(df['current'].size/5)
+if(numGetOld < 1):
+    numGetOld = 1
+currentAvgOld = df['current'].iloc[:-numGetOld].mean()
+powerFacAvgOld = df['power_factor_calc'].iloc[:-numGetOld].mean()
+opModeOld = df['current'].iloc[:-numGetOld].apply(classifyOpMode)
 contOpModeOld = opModeOld.value_counts()
-qtyOnOld = contOpModeOld['On']
-qtyStandByOld = contOpModeOld['StandBy']
-qtyOffOld = contOpModeOld['Off']
+#garantindo que a chave irá existir
+d = contOpModeOld.to_dict()
+d.setdefault('On', 0)
+d.setdefault('Off', 0)
+d.setdefault('Standby', 0)
+auxOld = pd.Series(d)
+#Observe que ao usar o método .setdefault(), as chaves só são criadas se não existirem no dicionário. Se a chave já existir, o método não faz nada.
+qtyOnOld = auxOld['On']
+qtyStandByOld = auxOld['StandBy']
+qtyOffOld = auxOld['Off']
 
 
 
@@ -112,9 +122,16 @@ with st.sidebar:
     powerFacAvg = df['power_factor_calc'].mean()
     opMode = df['current'].apply(classifyOpMode)
     contOpMode = opMode.value_counts()
-    qtyOn = contOpMode['On']
-    qtyStandBy = contOpMode['StandBy']
-    qtyOff = contOpMode['Off']
+    #garantindo que a chave irá existir
+    d = contOpMode.to_dict()
+    d.setdefault('On', 0)
+    d.setdefault('Off', 0)
+    d.setdefault('Standby', 0)
+    aux = pd.Series(d)
+    #Observe que ao usar o método .setdefault(), as chaves só são criadas se não existirem no dicionário. Se a chave já existir, o método não faz nada.
+    qtyOn = aux['On']
+    qtyStandBy = aux['StandBy']
+    qtyOff = aux['Off']
     st.metric("Corrente Média no período",  str(round(currentAvg, 3)) + " A", str(round(currentAvgOld-currentAvg, 3)) + " A" )
     st.metric("Fator de Potência calculado no período", round(powerFacAvg, 3), round(powerFacAvgOld-powerFacAvg, 3))
     st.metric("Quantidade de vezes ligado durante o período", str(qtyOn) + ' vezes', str(qtyOnOld-qtyOn) + ' vezes')

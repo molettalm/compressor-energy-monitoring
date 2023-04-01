@@ -117,8 +117,8 @@ with st.sidebar:
     qtyOff = contOpMode['Off']
     st.metric("Corrente Média no período",  str(round(currentAvg, 3)) + " A", str(round(currentAvgOld-currentAvg, 3)) + " A" )
     st.metric("Fator de Potência calculado no período", round(powerFacAvg, 3), round(powerFacAvgOld-powerFacAvg, 3))
-    st.metric("Quantidade de vezes ligado durante o período", str(round(qtyOn, 3)) + ' vezes', str(round(qtyOnOld-qtyOn, 3)) + ' vezes')
-    st.metric("Quantidade de vezes em standby durante o período", str(round(qtyStandBy, 3)) + ' vezes', str(round(qtyStandByOld-qtyStandBy, 3)) + ' vezes')
-    st.metric("Quantidade de vezes desligado durante o período", str(round(qtyOff, 3)) + ' vezes', str(round(qtyOffOld-qtyOff, 3)) + ' vezes')
+    st.metric("Quantidade de vezes ligado durante o período", str(qtyOn) + ' vezes', str(qtyOnOld-qtyOn) + ' vezes')
+    st.metric("Quantidade de vezes em standby durante o período", str(qtyStandBy) + ' vezes', str(qtyStandByOld-qtyStandBy) + ' vezes')
+    st.metric("Quantidade de vezes desligado durante o período", str(qtyOff) + ' vezes', str(qtyOffOld-qtyOff) + ' vezes')
 
 st.text('Lucas Moletta')

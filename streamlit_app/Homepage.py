@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import pymysql.cursors
 import numpy as np
+import plotly.express as px 
 from datetime import datetime
 from datetime import time
 
@@ -36,8 +37,8 @@ def load_data(date_select):
     df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc'])
     df['moment'] = pd.to_datetime(df['moment'])
     df = df[(df['moment']>=date_select[0]) & (df['moment']<date_select[1])]
-    df = df.set_index('moment') 
-    df.index = df.index.strftime('%d/%m/%y %H:%M:%S') 
+    #df = df.set_index('moment') 
+    #df.index = df.index.strftime('%d/%m/%y %H:%M:%S') 
     return df
 
 date_select = st.slider('Select the time range:',
@@ -52,8 +53,10 @@ st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n
 df = load_data(date_select)
 
 with st.container():
-    st.write("Tensão")
-    st.line_chart(df.rename(columns = {'voltage': 'Tensão (V)'})['Tensão (V)'], use_container_width=True) #Tensão
+    # st.write("Tensão")
+    # st.line_chart(df.rename(columns = {'voltage': 'Tensão (V)'})['Tensão (V)'], use_container_width=True) #Tensão
+    fig = px.line(df, x = 'moment', y = 'voltage')
+    st.plotly_chart(fig, use_container_width=True)
 with st.container():
     st.write("Corrente")
     st.line_chart(df.rename(columns = {'current': 'Corrente (A)'})['Corrente (A)'], use_container_width=True) #Corrente 

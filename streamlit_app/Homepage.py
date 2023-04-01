@@ -32,9 +32,9 @@ st.write(
 @st.cache_data
 def load_data(date_select):
     cursor = conn.cursor()
-    cursor.execute("SELECT moment, voltage, current, power_W, energy_WH, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc FROM pi2." + tableName)
+    cursor.execute("SELECT moment, voltage, current, power_W, energy_WH, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc, opMode FROM pi2." + tableName)
     data = cursor.fetchall()
-    df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc'])
+    df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc', 'opMode'])
     df['moment'] = pd.to_datetime(df['moment'])
     df = df[(df['moment']>=date_select[0]) & (df['moment']<date_select[1])]
     #df = df.set_index('moment') 
@@ -52,13 +52,23 @@ st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n
 
 df = load_data(date_select)
 
-def classifyOpMode(valor):
-    if valor > 0.2:
-        return 'On'
-    elif valor < 0.05:
-        return 'Off'
-    else:
-        return 'StandBy'
+def seconds_to_time(seconds):
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    
+    return f"{days} d, {hours} hr, {minutes} min, {seconds} seg"
+
+measuringTime = 5
+
+qtyOff = df[df['opMode'] == 0]['opMode'].count()
+qtyOffSec = qtyOff * measuringTime
+
+qtyOn = df[df['opMode'] == 1]['opMode'].count()
+qtyOnSec = qtyOn * measuringTime
+
+qtyStandby = df[df['opMode'] == 2]['opMode'].count()
+qtyStandbySec = qtyStandby * measuringTime
 
 with st.container():
     fig = px.line(df, x = 'moment', y = 'voltage', title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'})
@@ -80,30 +90,21 @@ with st.container():
     st.plotly_chart(fig, use_container_width=True)
 with st.container():
     st.write("Modos de operação")
-    chart_data = pd.DataFrame(np.random.randn(20,3), columns=["a", "b", "c"]) #Chart com a qtd de vezes do modo de operação
+    chart_data = pd.DataFrame(np.random.randn(20,3), columns=["Desligado", "Ligado", "StandBy"]) #Chart com a qtd de vezes do modo de operação
     st.bar_chart(chart_data) #Chart com a qtd de vezes do modo de operação
+    #Fazer isso pelos dias, quantas vezes em cada dia...
 
 #Para as métricas de modo de operação, quantas vezes ficou ligado, quantas vezes desligado, o outro modo de operação lá e por fim a qtd de Ah do período
 with st.sidebar:
     if (len(df['current']) != 0):
         currentAvg = df['current'].mean()
         powerFacAvg = df['power_factor_calc'].mean()
-        opMode = df['current'].apply(classifyOpMode)
-        contOpMode = opMode.value_counts()
-        #garantindo que a chave irá existir
-        d = contOpMode.to_dict()
-        d.setdefault('On', 0)
-        d.setdefault('Off', 0)
-        d.setdefault('Standby', 0)
-        aux = pd.Series(d)
-        #Observe que ao usar o método .setdefault(), as chaves só são criadas se não existirem no dicionário. Se a chave já existir, o método não faz nada.
-        qtyOn = aux['On']
-        qtyStandBy = aux['StandBy']
-        qtyOff = aux['Off']
+
         st.metric("Corrente Média no período",  str(round(currentAvg, 3)) + " A")
         st.metric("Fator de Potência calculado no período", round(powerFacAvg, 3))
-        st.metric("Quantidade de vezes ligado durante o período", str(qtyOn) + ' vezes')
-        st.metric("Quantidade de vezes em standby durante o período", str(qtyStandBy) + ' vezes')
-        st.metric("Quantidade de vezes desligado durante o período", str(qtyOff) + ' vezes')
+        
+        st.metric("Tempo desligado durante o período", seconds_to_time(qtyOffSec))
+        st.metric("Tempo ligado durante o período", seconds_to_time(qtyOnSec))
+        st.metric("Tempo em standby durante o período", seconds_to_time(qtyStandbySec))
 
 st.text('Lucas Moletta')

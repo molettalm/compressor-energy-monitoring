@@ -71,27 +71,33 @@ qtyStandby = df[df['opMode'] == 2]['opMode'].count()
 qtyStandbySec = qtyStandby * measuringTime
 
 with st.container():
-    fig = px.line(df, x = 'moment', y = 'voltage', title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'})
+    fig = px.line(df, x = 'moment', y = 'voltage', title='Tensão [V]', connectgaps=False, labels = {'voltage': 'Tensão', 'moment': 'Horário'})
     st.plotly_chart(fig, use_container_width=True)
 with st.container():
-    fig = px.line(df, x = 'moment', y = 'current', title='Corrente [A]', labels = {'current': 'Corrente', 'moment': 'Horário'})
+    fig = px.line(df, x = 'moment', y = 'current', title='Corrente [A]', connectgaps=False, labels = {'current': 'Corrente', 'moment': 'Horário'})
     st.plotly_chart(fig, use_container_width=True)
 with st.container():
-    fig = px.line(df, x = 'moment', y = 'power_W', title='Potência [W]', labels = {'power_W': 'Potência', 'moment': 'Horário'})
+    fig = px.line(df, x = 'moment', y = 'power_W', title='Potência [W]', connectgaps=False, labels = {'power_W': 'Potência', 'moment': 'Horário'})
     st.plotly_chart(fig, use_container_width=True)
 with st.container():
-    fig = px.line(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]', labels = {'energy_WH': 'Energia', 'moment': 'Horário'})
+    fig = px.line(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]', connectgaps=False, labels = {'energy_WH': 'Energia', 'moment': 'Horário'})
     st.plotly_chart(fig, use_container_width=True)
 with st.container():
-    fig = px.line(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência', color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'})
+    fig = px.line(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], connectgaps=False, title='Fator de Potência', color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'})
     st.plotly_chart(fig, use_container_width=True)
 with st.container():
-    fig = px.line(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'], title='Ângulo de Fase [Graus]', color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'})
+    fig = px.line(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  connectgaps=False, title='Ângulo de Fase [Graus]', color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'})
     st.plotly_chart(fig, use_container_width=True)
 with st.container():
     st.write("Modos de operação")
-    chart_data = pd.DataFrame(np.random.randn(20,3), columns=["Desligado", "Ligado", "StandBy"]) #Chart com a qtd de vezes do modo de operação
-    st.bar_chart(chart_data) #Chart com a qtd de vezes do modo de operação
+    stackeddf = df
+    stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
+    dailyValues = stackeddf.groupby(['moment','opMode']).size()
+    result_df = dailyValues.apply(lambda x: x*5).reset_index(name='result')
+    groupedAgain = result_df.groupby(['moment', 'opMode'])['result'].sum().reset_index()
+    st.bar_chart( data=groupedAgain, x='moment', y='result', color='opMode')
+    #chart_data = pd.DataFrame(np.random.randn(20,3), columns=["Desligado", "Ligado", "StandBy"]) #Chart com a qtd de vezes do modo de operação
+    #st.bar_chart(chart_data) #Chart com a qtd de vezes do modo de operação
     #Fazer isso pelos dias, quantas vezes em cada dia...
 
 #Para as métricas de modo de operação, quantas vezes ficou ligado, quantas vezes desligado, o outro modo de operação lá e por fim a qtd de Ah do período

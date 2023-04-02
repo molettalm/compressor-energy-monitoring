@@ -18,31 +18,28 @@ def load_data(date_select):
     df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc', 'opMode'])
     df['moment'] = pd.to_datetime(df['moment'])
     df = df[(df['moment']>=date_select[0]) & (df['moment']<date_select[1])]
-    #df = df.set_index('moment') 
-    #df.index = df.index.strftime('%d/%m/%y %H:%M:%S') 
     return df
 
 
 charts = {
-    'Tensão': lambda df: px.line(df, x='moment', y='voltage', title='Tensão [V]', markers=True, labels={'voltage': 'Tensão', 'moment': 'Horário'}),
-    'Corrente': lambda df: px.scatter(df, x='moment', y='current', title='Corrente [A]', labels={'current': 'Corrente', 'moment': 'Horário'}),
-    'Potência': lambda df: px.scatter(df, x='moment', y='power_W', title='Potência [W]', labels={'power_W': 'Potência', 'moment': 'Horário'}),
-    'Energia ': lambda df: px.scatter(df, x='moment', y='energy_WH', title='Energia [W/h]', labels={'energy_WH': 'Energia', 'moment': 'Horário'}),
-    'Fator de Potência': lambda df: px.scatter(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência', color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}),
-    'Ângulo de Fase' : lambda df: px.line(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]', color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}),
-    'Modo de Operação': lambda df: px.bar(groupedAgain,  x='moment',  y='result', color='opMode', labels = {'result': 'Tempo de operação (m)', 'moment': 'Horário','opMode':'Modo de Operação' })
+    'Tensão': lambda df: px.scatter(df, x = 'moment', y = 'voltage', title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'}),
+    'Corrente': lambda df: px.line(df, x = 'moment', y = 'current', title='Corrente [A]', markers=True, labels = {'current': 'Corrente', 'moment': 'Horário'}),
+    'Potência': lambda df: px.line(df, x = 'moment', y = 'power_W', title='Potência [W]', markers=True, labels = {'power_W': 'Potência', 'moment': 'Horário'}),
+    'Energia ': lambda df: px.line(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]', markers=True, labels = {'energy_WH': 'Energia', 'moment': 'Horário'}),
+    'Fator de Potência': lambda df: px.line(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência', markers=True, color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}),
+    'Ângulo de Fase' : lambda df: px.line(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]', markers=True, color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}),
 }
 
 mapping = {1: 'On', 2: 'StandBy', 0: 'Off'}
 
 measuringTime = 5
-tableName = 'imported'
+tableName = 'compressor_measurements'
 
 
-conn = pymysql.connect(host='localhost',
-                       user='root',
-                       password='root',
-                       database='node_test')
+conn = pymysql.connect(host='192.168.18.27',
+                       user='piuser',
+                       password='piuser',
+                       database='pi2')
 
 
 
@@ -80,12 +77,7 @@ charts_selected = st.multiselect('Selecione os gráficos que deseja ver:', list(
 
 df = load_data(date_select)
 
-stackeddf = df
-stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
-dailyValues = stackeddf.groupby(['moment','opMode']).size()
-result_df = dailyValues.apply(lambda x: (x*5)/60).reset_index(name='result')
-groupedAgain = result_df.groupby(['moment', 'opMode'])['result'].sum().reset_index()
-groupedAgain['opMode'] = groupedAgain['opMode'].replace(mapping)
+
 
 for chart_name in charts_selected:
     chart_function = charts[chart_name]
@@ -103,41 +95,16 @@ qtyOnSec = qtyOn * measuringTime
 qtyStandby = df[df['opMode'] == 2]['opMode'].count()
 qtyStandbySec = qtyStandby * measuringTime
 
-# with st.container():
-#     fig = px.line(df, x = 'moment', y = 'voltage', title='Tensão [V]', markers=True, labels = {'voltage': 'Tensão', 'moment': 'Horário'})
-#     #fig = px.scatter(df, x = 'moment', y = 'voltage', title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'})
-#     st.plotly_chart(fig, use_container_width=True)
-# with st.container():
-#     #fig = px.line(df, x = 'moment', y = 'current', title='Corrente [A]', labels = {'current': 'Corrente', 'moment': 'Horário'})
-#     fig = px.scatter(df, x = 'moment', y = 'current', title='Corrente [A]', labels = {'current': 'Corrente', 'moment': 'Horário'})
-#     st.plotly_chart(fig, use_container_width=True)
-# with st.container():
-#     #fig = px.line(df, x = 'moment', y = 'power_W', title='Potência [W]', labels = {'power_W': 'Potência', 'moment': 'Horário'})
-#     fig = px.scatter(df, x = 'moment', y = 'power_W', title='Potência [W]', labels = {'power_W': 'Potência', 'moment': 'Horário'})
-#     st.plotly_chart(fig, use_container_width=True)
-# with st.container():
-#     #fig = px.line(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]', labels = {'energy_WH': 'Energia', 'moment': 'Horário'})
-#     fig = px.scatter(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]', labels = {'energy_WH': 'Energia', 'moment': 'Horário'})
-#     st.plotly_chart(fig, use_container_width=True)
-# with st.container():
-#     #fig = px.line(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência', color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'})
-#     fig = px.scatter(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência', color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'})
-#     st.plotly_chart(fig, use_container_width=True)
-# with st.container():
-#     #fig = px.line(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]', color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'})
-#     fig = px.scatter(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]', color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'})
-#     st.plotly_chart(fig, use_container_width=True)
-# with st.container():
-#     st.write("Modos de operação")
-#     mapping = {1: 'On', 2: 'StandBy', 0: 'Off'}
-#     stackeddf = df
-#     stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
-#     dailyValues = stackeddf.groupby(['moment','opMode']).size()
-#     result_df = dailyValues.apply(lambda x: (x*5)/60).reset_index(name='result')
-#     groupedAgain = result_df.groupby(['moment', 'opMode'])['result'].sum().reset_index()
-#     groupedAgain['opMode'] = groupedAgain['opMode'].replace(mapping)
-#     fig = px.bar(groupedAgain,  x='moment',  y='result', color='opMode', labels = {'result': 'Tempo de operação (m)', 'moment': 'Horário','opMode':'Modo de Operação' })
-#     st.plotly_chart(fig, use_container_width=True)
+with st.container():
+    st.write("Modos de operação")
+    stackeddf = df
+    stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
+    dailyValues = stackeddf.groupby(['moment','opMode']).size()
+    result_df = dailyValues.apply(lambda x: (x*5)/60).reset_index(name='result')
+    groupedAgain = result_df.groupby(['moment', 'opMode'])['result'].sum().reset_index()
+    groupedAgain['opMode'] = groupedAgain['opMode'].replace(mapping)
+    fig = px.bar(groupedAgain,  x='moment',  y='result', color='opMode', labels = {'result': 'Tempo de operação (m)', 'moment': 'Horário','opMode':'Modo de Operação' })
+    st.plotly_chart(fig, use_container_width=True)
     
 
 #Para as métricas de modo de operação, quantas vezes ficou ligado, quantas vezes desligado, o outro modo de operação lá e por fim a qtd de Ah do período
@@ -145,10 +112,8 @@ with st.sidebar:
     if (len(df['current']) != 0):
         currentAvg = df['current'].mean()
         powerFacAvg = df['power_factor_calc'].mean()
-
         st.metric("Corrente Média no período",  str(round(currentAvg, 3)) + " A")
         st.metric("Fator de Potência calculado no período", round(powerFacAvg, 3))
-        
         st.metric("Tempo desligado durante o período", seconds_to_hours(qtyOffSec))
         st.metric("Tempo ligado durante o período", seconds_to_hours(qtyOnSec))
         st.metric("Tempo em standby durante o período", seconds_to_hours(qtyStandbySec))

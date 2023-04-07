@@ -3,12 +3,13 @@ import pandas as pd
 import pymysql.cursors
 import numpy as np
 import plotly.express as px 
-from datetime import datetime
 from datetime import time
+from datetime import datetime, timedelta
 
 def seconds_to_hours(seconds):
     hours = round((seconds / 3600),2)
     return f"{hours} Horas"
+
 
 @st.cache_data
 def load_data(date_select):
@@ -17,30 +18,38 @@ def load_data(date_select):
     data = cursor.fetchall()
     df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc', 'opMode'])
     df['moment'] = pd.to_datetime(df['moment'])
+    df["week"] = df["moment"].apply(lambda x: x.strftime("%Y-%U"))
     df = df[(df['moment']>=date_select[0]) & (df['moment']<date_select[1])]
+    
+    # Get the unique weeks represented in the data
+    
     return df
 
 
 charts = {
     'Tensão': lambda df: px.scatter(df, x = 'moment', y = 'voltage', title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'}),
-    'Corrente': lambda df: px.line(df, x = 'moment', y = 'current', title='Corrente [A]', markers=True, labels = {'current': 'Corrente', 'moment': 'Horário'}),
-    'Potência': lambda df: px.line(df, x = 'moment', y = 'power_W', title='Potência [W]', markers=True, labels = {'power_W': 'Potência', 'moment': 'Horário'}),
-    'Energia ': lambda df: px.line(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]', markers=True, labels = {'energy_WH': 'Energia', 'moment': 'Horário'}),
-    'Fator de Potência': lambda df: px.line(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência', markers=True, color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}),
-    'Ângulo de Fase' : lambda df: px.line(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]', markers=True, color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}),
+    'Corrente': lambda df: px.scatter(df, x = 'moment', y = 'current', title='Corrente [A]',  labels = {'current': 'Corrente', 'moment': 'Horário'}),
+    'Potência': lambda df: px.scatter(df, x = 'moment', y = 'power_W', title='Potência [W]',  labels = {'power_W': 'Potência', 'moment': 'Horário'}),
+    'Energia ': lambda df: px.scatter(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]',  labels = {'energy_WH': 'Energia', 'moment': 'Horário'}),
+    'Fator de Potência': lambda df: px.scatter(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência',  color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}),
+    'Ângulo de Fase' : lambda df: px.scatter(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]',  color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}),
 }
 
 mapping = {1: 'On', 2: 'StandBy', 0: 'Off'}
 
 measuringTime = 5
-tableName = 'compressor_measurements'
+# tableName = 'compressor_measurements'
+tableName = 'imported'
 
+# conn = pymysql.connect(host='192.168.18.27',
+#                        user='piuser',
+#                        password='piuser',
+#                        database='pi2')
 
-conn = pymysql.connect(host='192.168.18.27',
-                       user='piuser',
-                       password='piuser',
-                       database='pi2')
-
+conn = pymysql.connect(host='localhost',
+                       user='root',
+                       password='root',
+                       database='node_test')
 
 
 if 'min' not in st.session_state:
@@ -76,8 +85,6 @@ st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n
 charts_selected = st.multiselect('Selecione os gráficos que deseja ver:', list(charts.keys()), default=list(charts.keys()))
 
 df = load_data(date_select)
-
-
 
 for chart_name in charts_selected:
     chart_function = charts[chart_name]

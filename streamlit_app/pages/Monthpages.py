@@ -3,6 +3,7 @@ import pandas as pd
 import pymysql.cursors
 import numpy as np
 import plotly.express as px 
+import plotly.graph_objs as go
 from datetime import time
 from datetime import datetime, timedelta
 
@@ -42,29 +43,33 @@ def get_week_data():
     return weeks_df
 
 @st.cache_data
-def load_data(date_select):
+def load_data(filter_option,method):
     cursor = conn.cursor()
-    cursor.execute("SELECT moment, voltage, current, power_W, energy_WH, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc, opMode FROM " + tableName)
+    cursor.execute("SELECT moment, voltage, current, power_W, energy_WH, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc, opMode,week_year,active_hours  FROM " + tableName)
     data = cursor.fetchall()
-    df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc', 'opMode'])
-    df['moment'] = pd.to_datetime(df['moment'])
-    df = df[(df['moment']>=date_select[0]) & (df['moment']<date_select[1])]
-
+    df = pd.DataFrame(data, columns=['moment', 'voltage', 'current', 'power_W', 'energy_WH', 'power_factor_measured', 'power_factor_calc', 'phase_angle_measured', 'phase_angle_calc', 'opMode','week_year','active_hours'])
     
+    if (method == 'Weekly'):
+        date_obj = datetime.strptime(filter_option.split(' ')[0], '%Y-%m-%d')
+        year_week_iso = date_obj.isocalendar()
+        year_week_iso_format = f"{year_week_iso[0]}-{year_week_iso[1]:02d}"
+        df = df[(df['week_year']==year_week_iso_format)]
+
+    elif (method == 'Monthly'):
+        dt_obj = datetime.strptime(filter_option, '%Y %B')
+        str_value = dt_obj.strftime('%Y-%m')
+        df = df[df['moment'].str.startswith(str_value)]
+    
+    elif (method == 'Custom'):
+        df['moment'] = pd.to_datetime(df['moment'])
+        df["week"] = df["moment"].apply(lambda x: x.strftime("%Y-%U"))
+        df = df[(df['moment']>=filter_option[0]) & (df['moment']<filter_option[1])]
 
     return df
 
-
-# charts = {
-#     'Tensão': lambda df: px.scatter(df, x = 'moment', y = 'voltage', title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'}),
-#     'Corrente': lambda df: px.scatter(df, x = 'moment', y = 'current', title='Corrente [A]',  labels = {'current': 'Corrente', 'moment': 'Horário'}),
-#     'Potência': lambda df: px.scatter(df, x = 'moment', y = 'power_W', title='Potência [W]',  labels = {'power_W': 'Potência', 'moment': 'Horário'}),
-#     'Energia ': lambda df: px.scatter(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]',  labels = {'energy_WH': 'Energia', 'moment': 'Horário'}),
-#     'Fator de Potência': lambda df: px.scatter(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência',  color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}),
-#     'Ângulo de Fase' : lambda df: px.scatter(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]',  color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}),
-# }
-
 mapping = {1: 'On', 2: 'StandBy', 0: 'Off'}
+mapping_hours = {1: 'Horário Ativo', 0: 'Horário Inativo'}
+colors = ["#42f5e9","#f57b42", "#f5ef42"]
 
 measuringTime = 5
 # tableName = 'compressor_measurements'
@@ -104,32 +109,6 @@ st.write(
 
 filter_type = st.selectbox("Select filter type", ["Monthly", "Weekly","Custom"])
 
-# else:
-#     # Get a list of unique weeks from the 'week' column of the dataframe
-#     options = sorted(df['week'].unique())
-
-# selected_option = st.selectbox("Select an option", options)
-
-# if filter_type == "Monthly":
-#     # Perform monthly filtering operations based on the selected month
-#     filtered_df = df[df['date'].dt.strftime('%B') == selected_option]
-#     st.write(f"You selected monthly filtering for {selected_option}")
-# else:
-#     # Perform weekly filtering operations based on the selected week
-#     filtered_df = df[df['week'] == selected_option]
-#     st.write(f"You selected weekly filtering for {selected_option}")
-
-# date_select = st.slider('Select the time range:',
-#                         value=(st.session_state.min, st.session_state.max),
-#                         min_value=st.session_state.min,
-#                         max_value=st.session_state.max,
-#                         format="DD/MM/YY - hh:mm",
-#                         key=("slider", st.session_state.min, st.session_state.max))
-
-
-# st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n" + str(date_select[1]))
-#charts_selected = st.multiselect('Selecione os gráficos que deseja ver:', list(charts.keys()), default=list(charts.keys()))
-
 weeks_df = get_week_data()
 month_df = get_month_data()
 
@@ -141,24 +120,47 @@ if filter_type == "Custom":
                         format="DD/MM/YY - hh:mm",
                         key=("slider", st.session_state.min, st.session_state.max))
 
-    df = load_data(date_select)
+    df = load_data(date_select,filter_type)
 
 else:
     if filter_type == "Monthly":
         options = month_df['Month']
         filter_option = st.selectbox("Select an option", options)
-        df = load_data(filter_option)
+        df = load_data(filter_option,filter_type)
 
     elif filter_type == "Weekly":
         options = weeks_df['range']
         filter_option = st.selectbox("Select an option", options)
-        df = load_data(filter_option)
+        df = load_data(filter_option,filter_type)
       
+with st.container():
+    st.write("Modos de operação")
+    stackeddf = df
+    if filter_type == "Weekly":
+        stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
+        dailyValues = stackeddf.groupby(['moment','active_hours','opMode']).size()
+        result_df = dailyValues.apply(lambda x: round((x*5)/60),2).reset_index(name='result')
+        groupedAgain = result_df.groupby(['moment','active_hours','opMode'])['result'].sum().reset_index()
+        groupedAgain['opMode'] = groupedAgain['opMode'].replace(mapping)
+        groupedAgain['active_hours'] = groupedAgain['active_hours'].replace(mapping_hours)
 
-    
+        fig = go.Figure()
+        fig.update_layout(
+            template="simple_white",
+            xaxis=dict(title_text="Day"),
+            yaxis=dict(title_text="Time"),
+            barmode="group",
+        )
 
-#df = load_data(date_select)
+        for r, c in zip(groupedAgain['opMode'].unique(), colors):
+            plot_df = groupedAgain[groupedAgain['opMode'] == r]
+            fig.add_trace(
+                go.Bar(x=[plot_df['moment'], plot_df['active_hours']], y=plot_df['result'], name=str(r), marker_color=c)
+            )
 
+        st.plotly_chart(fig, use_container_width=True)
+
+st.dataframe(df)
 st.dataframe(weeks_df)
 
 # for chart_name in charts_selected:

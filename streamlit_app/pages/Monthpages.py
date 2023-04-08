@@ -72,18 +72,18 @@ mapping_hours = {1: 'Horário Ativo', 0: 'Horário Inativo'}
 colors = ["#42f5e9","#f57b42", "#f5ef42"]
 
 measuringTime = 5
-# tableName = 'compressor_measurements'
-tableName = 'imported'
+tableName = 'compressor_measurements'
+#tableName = 'imported'
 
-# conn = pymysql.connect(host='192.168.18.27',
-#                        user='piuser',
-#                        password='piuser',
-#                        database='pi2')
+conn = pymysql.connect(host='192.168.18.27',
+                       user='piuser',
+                       password='piuser',
+                       database='pi2')
 
-conn = pymysql.connect(host='localhost',
-                       user='root',
-                       password='root',
-                       database='node_test')
+# conn = pymysql.connect(host='localhost',
+#                        user='root',
+#                        password='root',
+#                        database='node_test')
 
 
 if 'min' not in st.session_state:
@@ -162,44 +162,5 @@ with st.container():
 
 st.dataframe(df)
 st.dataframe(weeks_df)
-
-# for chart_name in charts_selected:
-#     chart_function = charts[chart_name]
-#     with st.container():
-#         fig = chart_function(df)
-#         st.plotly_chart(fig, use_container_width=True)
-
-
-# qtyOff = df[df['opMode'] == 0]['opMode'].count()
-# qtyOffSec = qtyOff * measuringTime
-
-# qtyOn = df[df['opMode'] == 1]['opMode'].count()
-# qtyOnSec = qtyOn * measuringTime
-
-# qtyStandby = df[df['opMode'] == 2]['opMode'].count()
-# qtyStandbySec = qtyStandby * measuringTime
-
-# with st.container():
-#     st.write("Modos de operação")
-#     stackeddf = df
-#     stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
-#     dailyValues = stackeddf.groupby(['moment','opMode']).size()
-#     result_df = dailyValues.apply(lambda x: (x*5)/60).reset_index(name='result')
-#     groupedAgain = result_df.groupby(['moment', 'opMode'])['result'].sum().reset_index()
-#     groupedAgain['opMode'] = groupedAgain['opMode'].replace(mapping)
-#     fig = px.bar(groupedAgain,  x='moment',  y='result', color='opMode', labels = {'result': 'Tempo de operação (m)', 'moment': 'Horário','opMode':'Modo de Operação' })
-#     st.plotly_chart(fig, use_container_width=True)
-    
-
-#Para as métricas de modo de operação, quantas vezes ficou ligado, quantas vezes desligado, o outro modo de operação lá e por fim a qtd de Ah do período
-# with st.sidebar:
-#     if (len(df['current']) != 0):
-#         currentAvg = df['current'].mean()
-#         powerFacAvg = df['power_factor_calc'].mean()
-#         st.metric("Corrente Média no período",  str(round(currentAvg, 3)) + " A")
-#         st.metric("Fator de Potência calculado no período", round(powerFacAvg, 3))
-#         st.metric("Tempo desligado durante o período", seconds_to_hours(qtyOffSec))
-#         st.metric("Tempo ligado durante o período", seconds_to_hours(qtyOnSec))
-#         st.metric("Tempo em standby durante o período", seconds_to_hours(qtyStandbySec))
 
 st.text('Lucas Moletta')

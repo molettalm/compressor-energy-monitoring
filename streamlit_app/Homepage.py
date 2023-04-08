@@ -38,18 +38,18 @@ charts = {
 mapping = {1: 'On', 2: 'StandBy', 0: 'Off'}
 
 measuringTime = 5
-# tableName = 'compressor_measurements'
-tableName = 'imported'
+tableName = 'compressor_measurements'
+#tableName = 'imported'
 
-# conn = pymysql.connect(host='192.168.18.27',
-#                        user='piuser',
-#                        password='piuser',
-#                        database='pi2')
+conn = pymysql.connect(host='192.168.18.27',
+                       user='piuser',
+                       password='piuser',
+                       database='pi2')
 
-conn = pymysql.connect(host='localhost',
-                       user='root',
-                       password='root',
-                       database='node_test')
+# conn = pymysql.connect(host='localhost',
+#                        user='root',
+#                        password='root',
+#                        database='node_test')
 
 
 if 'min' not in st.session_state:

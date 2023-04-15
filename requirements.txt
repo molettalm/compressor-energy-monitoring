@@ -1,3 +1,0 @@
-python
-pymysql
-streamlit

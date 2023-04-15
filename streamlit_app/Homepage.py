@@ -41,7 +41,7 @@ measuringTime = 5
 tableName = 'compressor_measurements'
 #tableName = 'imported'
 
-conn = pymysql.connect(host='utfpr-pi2-compressor.mysql.database.azure.com',
+conn = pymysql.connect(host='utfpr-pi2-compressor-monitor.mysql.database.azure.com',
                        user='pi2root',
                        password='UTFPR@senha',
                        database='pi2')

@@ -107,7 +107,7 @@ with st.container():
     stackeddf = df
     stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
     dailyValues = stackeddf.groupby(['moment','opMode']).size()
-    result_df = dailyValues.apply(lambda x: round((x*0.5)/60),2).reset_index(name='result')
+    result_df = dailyValues.apply(lambda x: round((x)/60),2).reset_index(name='result')
     groupedAgain = result_df.groupby(['moment', 'opMode'])['result'].sum().reset_index()
     groupedAgain['opMode'] = groupedAgain['opMode'].replace(mapping)
     fig = px.bar(groupedAgain,  x='moment',  y='result', color='opMode', labels = {'result': 'Tempo de operação (m)', 'moment': 'Horário','opMode':'Modo de Operação' })

@@ -37,7 +37,7 @@ charts = {
 
 mapping = {1: 'On', 2: 'StandBy', 0: 'Off'}
 
-measuringTime = 5
+measuringTime = 0.5
 tableName = 'compressor_measurements'
 #tableName = 'imported'
 

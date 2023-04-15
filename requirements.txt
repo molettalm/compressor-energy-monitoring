@@ -1,3 +1,0 @@
-python==3.10
-pymysql==1.0.2
-streamlit==1.20

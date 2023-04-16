@@ -11,7 +11,7 @@ def seconds_to_hours(seconds):
     return f"{hours} Horas"
 
 
-@st.cache_data
+@st.cache_data(ttl = 3600)
 def load_data(date_select):
     cursor = conn.cursor()
     cursor.execute("SELECT moment, voltage, current, power_W, energy_WH, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc, opMode FROM " + tableName)

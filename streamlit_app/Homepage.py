@@ -90,7 +90,7 @@ date_select = st.slider('Select the time range:',
                         min_value=st.session_state.min,
                         max_value=st.session_state.max,
                         format="DD/MM/YY - hh:mm",
-                        step=dt.timedelta(hours=12),
+                        step=timedelta(hours=12),
                         key=("slider"))
 
 st.session_state.max_selected = check_difference(st.session_state.min_selected,st.session_state.max_selected)

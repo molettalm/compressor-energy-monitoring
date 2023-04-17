@@ -10,12 +10,12 @@ def seconds_to_hours(seconds):
     hours = round((seconds / 3600),2)
     return f"{hours} Horas"
 
-def check_difference(st.session_state.min_selected, st.session_state.max_selected, max_difference=timedelta(hours=12)):
-    difference = st.session_state.max_selected - st.session_state.min_selected
+def check_difference(min_selected, max_selected, max_difference=timedelta(hours=12)):
+    difference = max_selected - min_selected
     if difference > max_difference:
         st.warning(f"Please select a range within {max_difference} hours")
-        st.session_state.max_selected = st.session_state.min_selected + max_difference
-    return st.session_state.max_selected
+        max_selected = min_selected + max_difference
+    return max_selected
 
 @st.cache_data(ttl = 3600)
 def load_data(date_select):

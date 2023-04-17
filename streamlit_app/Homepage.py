@@ -10,6 +10,12 @@ def seconds_to_hours(seconds):
     hours = round((seconds / 3600),2)
     return f"{hours} Horas"
 
+def check_difference(st.session_state.min_selected, st.session_state.max_selected, max_difference=timedelta(hours=12)):
+    difference = st.session_state.max_selected - st.session_state.min_selected
+    if difference > max_difference:
+        st.warning(f"Please select a range within {max_difference} hours")
+        st.session_state.max_selected = st.session_state.min_selected + max_difference
+    return st.session_state.max_selected
 
 @st.cache_data(ttl = 3600)
 def load_data(date_select):
@@ -54,10 +60,15 @@ conn = pymysql.connect(host='utfpr-pi2-compressor-monitor.mysql.database.azure.c
 
 if 'min' not in st.session_state:
     cursor = conn.cursor()
-    #cursor.execute("SELECT Min(moment) FROM "+ tableName)
-    cursor.execute("SELECT moment FROM "+ tableName + " ORDER BY id DESC LIMIT 1 OFFSET 30000" )
+    cursor.execute("SELECT Min(moment) FROM "+ tableName)
     st.session_state.min = cursor.fetchone()[0]
-
+    
+    cursor.execute("SELECT moment FROM "+ tableName + " ORDER BY id DESC LIMIT 1 OFFSET 30000" )
+    st.session_state.min_selected = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT moment FROM "+ tableName + " ORDER BY id DESC LIMIT 1" )
+    st.session_state.max_selected = cursor.fetchone()[0]
+    
     cursor.execute("SELECT Max(moment) FROM "+ tableName)
     st.session_state.max= cursor.fetchone()[0]
     
@@ -75,13 +86,14 @@ st.write(
 )
 
 date_select = st.slider('Select the time range:',
-                        value=(st.session_state.min, st.session_state.max),
+                        value=( st.session_state.min_selected, st.session_state.max_selected),
                         min_value=st.session_state.min,
                         max_value=st.session_state.max,
                         format="DD/MM/YY - hh:mm",
+                        step=dt.timedelta(hours=12),
                         key=("slider"))
 
-
+st.session_state.max_selected = check_difference(st.session_state.min_selected,st.session_state.max_selected)
 st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n" + str(date_select[1]))
 charts_selected = st.multiselect('Selecione os gráficos que deseja ver:', list(charts.keys()), default=list(charts.keys()))
 

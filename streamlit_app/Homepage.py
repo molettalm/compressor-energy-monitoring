@@ -54,7 +54,8 @@ conn = pymysql.connect(host='utfpr-pi2-compressor-monitor.mysql.database.azure.c
 
 if 'min' not in st.session_state:
     cursor = conn.cursor()
-    cursor.execute("SELECT Min(moment) FROM "+ tableName)
+    #cursor.execute("SELECT Min(moment) FROM "+ tableName)
+    cursor.execute("SELECT moment FROM "+ tableName + ORDER BY id DESC LIMIT 1 OFFSET 30000 )
     st.session_state.min = cursor.fetchone()[0]
 
     cursor.execute("SELECT Max(moment) FROM "+ tableName)
@@ -78,7 +79,7 @@ date_select = st.slider('Select the time range:',
                         min_value=st.session_state.min,
                         max_value=st.session_state.max,
                         format="DD/MM/YY - hh:mm",
-                        key=("slider", st.session_state.min, st.session_state.max))
+                        key=("slider"))
 
 
 st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n" + str(date_select[1]))

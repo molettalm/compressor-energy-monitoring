@@ -30,7 +30,7 @@ charts = {
     'Tensão': lambda df: px.scatter(df, x = 'moment', y = 'voltage', title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'}),
     'Corrente': lambda df: px.scatter(df, x = 'moment', y = 'current', title='Corrente [A]',  labels = {'current': 'Corrente', 'moment': 'Horário'}),
     'Potência': lambda df: px.scatter(df, x = 'moment', y = 'power_W', title='Potência [W]',  labels = {'power_W': 'Potência', 'moment': 'Horário'}),
-    'Energia ': lambda df: px.scatter(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]',  labels = {'energy_WH': 'Energia', 'moment': 'Horário'}),
+    #'Energia ': lambda df: px.scatter(df, x = 'moment', y = 'energy_WH', title='Energia [W/h]',  labels = {'energy_WH': 'Energia', 'moment': 'Horário'}),
     'Fator de Potência': lambda df: px.scatter(df, x = 'moment', y = ['power_factor_measured', 'power_factor_calc'], title='Fator de Potência',  color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}),
     'Ângulo de Fase' : lambda df: px.scatter(df, x = 'moment', y = ['phase_angle_measured', 'phase_angle_calc'],  title='Ângulo de Fase [Graus]',  color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}),
 }

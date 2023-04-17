@@ -55,7 +55,7 @@ conn = pymysql.connect(host='utfpr-pi2-compressor-monitor.mysql.database.azure.c
 if 'min' not in st.session_state:
     cursor = conn.cursor()
     #cursor.execute("SELECT Min(moment) FROM "+ tableName)
-    cursor.execute("SELECT moment FROM "+ tableName + ORDER BY id DESC LIMIT 1 OFFSET 30000 )
+    cursor.execute("SELECT moment FROM "+ tableName + " ORDER BY id DESC LIMIT 1 OFFSET 30000" )
     st.session_state.min = cursor.fetchone()[0]
 
     cursor.execute("SELECT Max(moment) FROM "+ tableName)

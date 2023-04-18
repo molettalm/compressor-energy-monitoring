@@ -79,7 +79,7 @@ if 'min' not in st.session_state:
     query = "SELECT moment , voltage, current, power_W, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc, opMode FROM " + tableName + ";"
     st.session_state.df = cx.read_sql(connectionstring, query, return_type = "polars")
     st.session_state.min = st.session_state.df['moment'].min()
-    st.session_state.min_selected = st.session_state.df['moment'].min()
+    st.session_state.min_selected = st.session_state.df['moment'][-30000]
     st.session_state.max_selected = st.session_state.df['moment'].max()
     st.session_state.max= st.session_state.df['moment'].max()
     

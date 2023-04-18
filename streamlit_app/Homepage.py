@@ -108,8 +108,6 @@ st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n
 charts_selected = st.multiselect('Selecione os gráficos que deseja ver:', list(charts.keys()), default=list(charts.keys()))
 
 df_final = load_data(date_select,st.session_state.df)
-print(df_final.head())
-print(df_final.dtypes)
 
 for chart_name in charts_selected:
     chart_function = charts[chart_name]

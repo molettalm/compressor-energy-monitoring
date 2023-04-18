@@ -15,7 +15,7 @@ def seconds_to_hours(seconds):
 def load_data(date_select,df):
 
     sample_size = 35000
-
+    df = df.filter(pl.col("moment").is_between(date_select[0],date_select[1]))
     df = df.with_columns(pl.col("moment").apply(lambda x: x.timestamp()))
     moment_downsampled = df['moment'].to_list()
     voltage_downsampled = df['voltage'].to_list()
@@ -48,7 +48,6 @@ def load_data(date_select,df):
     final_df = pl.DataFrame(data)
     final_df = final_df.with_columns(pl.col("moment").apply(lambda x:datetime.fromtimestamp(x)))
     final_df = final_df.with_columns(pl.col("moment").dt.strftime("%Y-%U").alias('week'))
-    final_df = final_df.filter(pl.col("moment").is_between(date_select[0],date_select[1]))
     return final_df
 
 

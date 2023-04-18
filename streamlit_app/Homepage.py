@@ -14,7 +14,7 @@ def seconds_to_hours(seconds):
 
 def load_data(date_select,df):
 
-    sample_size = 40000
+    sample_size = 35000
 
     df = df.with_columns(pl.col("moment").apply(lambda x: x.timestamp()))
     moment_downsampled = df['moment'].to_list()
@@ -74,7 +74,7 @@ if 'min' not in st.session_state:
     query = "SELECT moment , voltage, current, power_W, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc, opMode FROM " + tableName + ";"
     st.session_state.df = cx.read_sql(connectionstring, query, return_type = "polars")
     st.session_state.min = st.session_state.df['moment'].min()
-    st.session_state.min_selected = st.session_state.df['moment'][-30000]
+    st.session_state.min_selected = st.session_state.df['moment'][-65000]
     st.session_state.max_selected = st.session_state.df['moment'].max()
     st.session_state.max= st.session_state.df['moment'].max()
     

@@ -70,11 +70,6 @@ measuringTime = 1
 tableName = 'compressor_measurements'
 
 
-conn = pymysql.connect(host='utfpr-pi2-compressor-monitor.mysql.database.azure.com',
-                       user='pi2root',
-                       password='UTFPR@senha',
-                       database='pi2')
-
 if 'min' not in st.session_state:
     query = "SELECT moment , voltage, current, power_W, power_factor_measured, power_factor_calc, phase_angle_measured, phase_angle_calc, opMode FROM " + tableName + ";"
     st.session_state.df = cx.read_sql(connectionstring, query, return_type = "polars")

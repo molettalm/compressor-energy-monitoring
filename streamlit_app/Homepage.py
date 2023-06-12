@@ -12,11 +12,36 @@ def seconds_to_hours(seconds):
     return f"{hours} Horas"
 
 
-def load_data(date_select,df):
+def load_data(date_select,df,measuringTime):
 
     sample_size = 35000
     df = df.filter(pl.col("moment").is_between(date_select[0],date_select[1]))
+    print(df)
+    
+    
+    ###### calculando tempo de operacoes antes de aplicar downsampling 
+    qtyOff = len(df.filter(pl.col("opMode") == 0 ))
+    qtyOffSec = qtyOff * measuringTime
+
+    qtyOn = len(df.filter(pl.col("opMode") == 1 ))
+    qtyOnSec = qtyOn * measuringTime
+
+    qtyStandby = len(df.filter(pl.col("opMode") == 2 ))
+    qtyStandbySec = qtyStandby * measuringTime
+
+    ##calculando stacked bar metrics
+
+    stackeddf = df.select(pl.col("moment").dt.date())
+    stackeddf = stackeddf.with_columns(pl.lit(df.get_column('opMode')).alias('opMode'))
+    dailyValues = stackeddf.groupby(['moment','opMode'], maintain_order=True).count()
+    dailyValues = dailyValues.with_columns(dailyValues.select(pl.col("count")/60))
+    dailyValues = dailyValues.with_columns(pl.col("count").round(2))
+    dailyValues = dailyValues.with_columns(pl.col("opMode").str.replace("1", "On"))
+    dailyValues = dailyValues.with_columns(pl.col("opMode").str.replace("2", "StandBy"))
+    dailyValues = dailyValues.with_columns(pl.col("opMode").str.replace("0", "Off"))
+
     df = df.with_columns(pl.col("moment").apply(lambda x: x.timestamp()))
+
     moment_downsampled = df['moment'].to_list()
     voltage_downsampled = df['voltage'].to_list()
     current_downsampled = df['current'].to_list()
@@ -48,17 +73,16 @@ def load_data(date_select,df):
     final_df = pl.DataFrame(data)
     final_df = final_df.with_columns(pl.col("moment").apply(lambda x:datetime.fromtimestamp(x)))
     final_df = final_df.with_columns(pl.col("moment").dt.strftime("%Y-%U").alias('week'))
-    return final_df
+    return final_df,qtyOffSec,qtyOnSec,qtyStandbySec,dailyValues
 
 
 
 charts = {
     'Tensão': lambda df: px.scatter( x = df_final['moment'], y = df_final['voltage'], title='Tensão [V]', labels = {'voltage': 'Tensão', 'moment': 'Horário'}, render_mode='webgl'),
     'Corrente': lambda df_final: px.scatter( x = df_final['moment'], y = df_final['current'], title='Corrente [A]',  labels = {'current': 'Corrente', 'moment': 'Horário'}, render_mode='webgl'),
-    'Potência': lambda df_final: px.scatter( x = df_final['moment'], y = df_final['power_W'], title='Potência [W]',  labels = {'power_W': 'Potência', 'moment': 'Horário'}, render_mode='webgl')
-    ##ARRUMAR ESSES DOIS GRAFICOS
-    #'Fator de Potência': lambda df: px.scatter( x = df['moment'], y = df.select(pl.col(['power_factor_measured', 'power_factor_calc'])), title='Fator de Potência',  color_discrete_map = {'power_factor_measured': 'green', 'power_factor_calc': 'blue'} , labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}, render_mode='webgl'),
-    #'Ângulo de Fase' : lambda df: px.scatter(x = df['moment'], y = df.select(pl.col(["phase_angle_measured", "phase_angle_calc"])),  title='Ângulo de Fase [Graus]',  color_discrete_map = {'phase_angle_measured': 'green', 'phase_angle_calc': 'blue'} , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}, render_mode='webgl'),
+    'Potência': lambda df_final: px.scatter( x = df_final['moment'], y = df_final['power_W'], title='Potência [W]',  labels = {'power_W': 'Potência', 'moment': 'Horário'}, render_mode='webgl'),
+    'Fator de Potência': lambda df: px.scatter( x = df_power_factor['moment'], y = df_power_factor['power_factor'], color = df_power_factor['source'], title='Fator de Potência', labels = {'power_factor_measured': 'Medido', 'power_factor_calc': 'Calculado', 'moment': 'Horário'}, render_mode='webgl'),
+    'Ângulo de Fase' : lambda df: px.scatter(x = df_phase_angle['moment'], y = df_phase_angle['phase_angle'],color = df_phase_angle['source'],  title='Ângulo de Fase [Graus]' , labels = {'phase_angle_measured': 'Medido', 'phase_angle_calc': 'Calculado', 'moment': 'Horário'}, render_mode='webgl')
 }
 
 connectionstring = "mysql://python:python@utfpr-pi2-compressor-monitor.mysql.database.azure.com:3306/pi2"
@@ -101,7 +125,37 @@ date_select = st.slider('Select the time range:',
 st.sidebar.header("Data das informações: \n" + str(date_select[0]) + " até \n" + str(date_select[1]))
 charts_selected = st.multiselect('Selecione os gráficos que deseja ver:', list(charts.keys()), default=list(charts.keys()))
 
-df_final = load_data(date_select,st.session_state.df)
+
+
+##### Massageando df
+
+df_final,qtyOffSec,qtyOnSec,qtyStandbySec,dailyValues = load_data(date_select,st.session_state.df,measuringTime)
+
+## DF for fator de potencia
+df_power_factor1 = df_final.select(pl.col("power_factor_measured").alias('power_factor'))
+df_power_factor1 = df_power_factor1.with_columns(pl.lit('power_factor_measured').alias('source'))
+df_power_factor1 = df_power_factor1.with_columns(pl.lit(df_final.get_column('moment')).alias('moment'))
+
+
+df_power_factor2 = df_final.select(pl.col("power_factor_calc").alias('power_factor'))
+df_power_factor2 = df_power_factor2.with_columns(pl.lit('power_factor_calc').alias('source'))
+df_power_factor2 = df_power_factor2.with_columns(pl.lit(df_final.get_column('moment')).alias('moment'))
+
+
+df_power_factor = pl.concat([df_power_factor1,df_power_factor2], rechunk=True)
+
+## DF for angulo de fase
+df_phase_angle1 = df_final.select(pl.col("phase_angle_measured").alias('phase_angle'))
+df_phase_angle1 = df_phase_angle1.with_columns(pl.lit('phase_angle_measured').alias('source'))
+df_phase_angle1 = df_phase_angle1.with_columns(pl.lit(df_final.get_column('moment')).alias('moment'))
+
+
+df_phase_angle2 = df_final.select(pl.col("phase_angle_calc").alias('phase_angle'))
+df_phase_angle2 = df_phase_angle2.with_columns(pl.lit('phase_angle_calc').alias('source'))
+df_phase_angle2 = df_phase_angle2.with_columns(pl.lit(df_final.get_column('moment')).alias('moment'))
+
+
+df_phase_angle = pl.concat([df_phase_angle1,df_phase_angle2], rechunk=True)
 
 for chart_name in charts_selected:
     chart_function = charts[chart_name]
@@ -110,28 +164,11 @@ for chart_name in charts_selected:
         st.plotly_chart(fig, use_container_width=True)
 
 
-#############TENQ ARRUMAR ISSO AQUI
 
-# qtyOff = df[df['opMode'] == 0]['opMode'].count()
-# qtyOffSec = qtyOff * measuringTime
-
-# qtyOn = df[df['opMode'] == 1]['opMode'].count()
-# qtyOnSec = qtyOn * measuringTime
-
-# qtyStandby = df[df['opMode'] == 2]['opMode'].count()
-# qtyStandbySec = qtyStandby * measuringTime
-
-
-# with st.container():
-#     st.write("Modos de operação")
-#     stackeddf = df
-#     stackeddf['moment'] = pd.to_datetime(stackeddf['moment']).dt.strftime('%Y-%m-%d')
-#     dailyValues = stackeddf.groupby(['moment','opMode']).size()
-#     result_df = dailyValues.apply(lambda x: round((x)/60),2).reset_index(name='result')
-#     groupedAgain = result_df.groupby(['moment', 'opMode'])['result'].sum().reset_index()
-#     groupedAgain['opMode'] = groupedAgain['opMode'].replace(mapping)
-#     fig = px.bar(groupedAgain,  x='moment',  y='result', color='opMode', labels = {'result': 'Tempo de operação (m)', 'moment': 'Horário','opMode':'Modo de Operação' })
-#     st.plotly_chart(fig, use_container_width=True)
+with st.container():
+    st.write("Modos de operação")
+    fig = px.bar(dailyValues,  x=dailyValues['moment'],  y=dailyValues['count'], color=dailyValues['opMode'], labels = {'result': 'Tempo de operação (m)', 'moment': 'Horário','opMode':'Modo de Operação' })
+    st.plotly_chart(fig, use_container_width=True)
 
 
 
@@ -142,9 +179,8 @@ with st.sidebar:
         powerFacAvg = df_final['power_factor_calc'].mean()
         st.metric("Corrente Média no período",  str(round(currentAvg, 3)) + " A")
         st.metric("Fator de Potência calculado no período", round(powerFacAvg, 3))
-        ##ARRUMAR LA EM CIMA PRA PODER PRINTAR METRICAS
-        # st.metric("Tempo desligado durante o período", seconds_to_hours(qtyOffSec))
-        # st.metric("Tempo ligado durante o período", seconds_to_hours(qtyOnSec))
-        # st.metric("Tempo em standby durante o período", seconds_to_hours(qtyStandbySec))
+        st.metric("Tempo desligado durante o período", seconds_to_hours(qtyOffSec))
+        st.metric("Tempo ligado durante o período", seconds_to_hours(qtyOnSec))
+        st.metric("Tempo em standby durante o período", seconds_to_hours(qtyStandbySec))
 
 st.text('Lucas Moletta')
